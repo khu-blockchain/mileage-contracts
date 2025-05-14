@@ -1,7 +1,9 @@
+#!/bin/bash
+
 forge build --silent
 
-jq '.bytecode.object' ./out/SwMileageToken.sol/SwMileageToken.json | sed -r 's/^.{3}//' | sed -r 's/.{1}$//' > bytecode.txt
-jq '.bytecode.object' ./out/SwMileageFactory.sol/SwMileageTokenFactory.json | sed -r 's/^.{3}//' | sed -r 's/.{1}$//' > bytecode_factory.txt
+jq '.bytecode.object' ./out/SwMileageToken.impl.sol/SwMileageTokenImpl.json | sed -r 's/^.{3}//' | sed -r 's/.{1}$//' > ./artifacts/SwMileageToken.bytecode.txt
+jq '.bytecode.object' ./out/StudentManager.impl.sol/StudentManagerImpl.json | sed -r 's/^.{3}//' | sed -r 's/.{1}$//' > ./artifacts/StudentManager.bytecode.txt
 
-jq '.abi' ./out/SwMileageToken.sol/SwMileageToken.json > abi.json
-jq '.abi' ./out/SwMileageFactory.sol/SwMileageTokenFactory.json > abi_factory.json
+jq '.abi' ./out/SwMileageToken.impl.sol/SwMileageTokenImpl.json > ./artifacts/SwMileageToken.abi.json
+jq '.abi' ./out/StudentManager.impl.sol/StudentManagerImpl.json > ./artifacts/StudentManager.abi.json
