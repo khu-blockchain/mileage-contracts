@@ -55,6 +55,10 @@ interface IStudentManager {
 
     function getPendingAccountChange(
         bytes32 studentId
+    ) external view returns (AccountChangeProposal memory);
+
+    function getPendingAccountChangeTarget(
+        bytes32 studentId
     ) external view returns (address);
 
     function hasPendingAccountChange(

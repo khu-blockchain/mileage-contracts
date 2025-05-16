@@ -63,6 +63,12 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
 
     function getPendingAccountChange(
         bytes32 studentId
+    ) external view returns (AccountChangeProposal memory) {
+        return pendingAccountChanges[studentId];
+    }
+
+    function getPendingAccountChangeTarget(
+        bytes32 studentId
     ) public view returns (address) {
         return pendingAccountChanges[studentId].targetAccount;
     }
