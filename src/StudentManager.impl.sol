@@ -176,9 +176,9 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
         uint256 balance = 0;
         bool isParticipated = false;
 
-        require(targetAccount != address(0), "invalid targetAccount");
+        require(targetAccount != address(0), "no pending account change");
         require(targetAccount == msg.sender, "unauthorized confirmation");
-        require(studentByAddr[targetAccount] == "", "targetAccount already exists");
+        require(studentByAddr[targetAccount] == bytes32(0), "targetAccount already exists");
 
         if (_mileageToken.participated(currentAccount)) {
             isParticipated = true;
@@ -206,6 +206,10 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
         if (_mileageToken.participated(currentAccount)) {
             isParticipated = true;
             balance = _mileageToken.balanceOf(currentAccount);
+        }
+
+        if (pendingAccountChanges[studentId].targetAccount != address(0)) {
+            delete pendingAccountChanges[studentId];
         }
 
         students[studentId] = targetAccount;
