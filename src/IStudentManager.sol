@@ -37,6 +37,10 @@ interface IStudentManager {
 
     event MileageBurned(bytes32 indexed studentId, address indexed account, address indexed admin, uint256 amount);
 
+    event StudentRecordUpdated(bytes32 indexed studentId, address indexed account, address indexed targetAccount);
+
+    event transferMileageToken(bytes32 indexed fromStudentId, bytes32 indexed toStudentId, uint256 amount);
+
     function changeMileageToken(
         address addr
     ) external;
@@ -78,4 +82,6 @@ interface IStudentManager {
     ) external;
 
     function changeAccount(bytes32 studentId, address targetAccount) external;
+    function updateStudentRecord(bytes32 studentId, address targetAccount, bool _clear) external;
+    function transferFromToken(bytes32 fromStudentId, bytes32 toStudentId, uint256 amount) external;
 }

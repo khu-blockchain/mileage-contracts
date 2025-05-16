@@ -200,4 +200,32 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin {
         }
         emit AccountChanged(studentId, currentAccount, targetAccount);
     }
+
+    // Imediately update student record
+    function updateStudentRecord(bytes32 studentId, address targetAccount, bool _clear) external onlyAdmin {
+        require(studentId != bytes32(0), "invalid student ID");
+
+        address currentAccount = students[studentId];
+
+        if (currentAccount != address(0) && _clear) {
+            delete studentByAddr[currentAccount];
+        }
+
+        if (pendingAccountChanges[studentId].targetAccount != address(0)) {
+            delete pendingAccountChanges[studentId];
+        }
+
+        students[studentId] = targetAccount;
+        studentByAddr[targetAccount] = studentId;
+
+        emit StudentRecordUpdated(studentId, currentAccount, targetAccount);
+    }
+
+    function transferFromToken(bytes32 fromStudentId, bytes32 toStudentId, uint256 amount) external onlyAdmin {
+        address from = students[fromStudentId];
+        address to = students[toStudentId];
+        require(from != address(0) && to != address(0), "invalid student ID");
+        // transfer token directly
+        _mileageToken.transferFrom(from, to, amount);
+    }
 }

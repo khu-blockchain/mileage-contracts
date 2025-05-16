@@ -461,4 +461,159 @@ contract StudentManagerTest is Test {
 
         assertEq(students.length, 1);
     }
+
+    function test_updateStudentRecord() public {
+        // Case 1
+        bytes32 studentId = keccak256(abi.encode("studentId", "123456789"));
+        address original = bob;
+        address dummy0 = makeAddr("dummy0");
+
+        _registerStudent(studentId, original);
+
+        // Award some tokens to the original account
+        bytes32 docHash = keccak256("THIS IS TEST DOCUMENT");
+        bytes32 reasonHash = keccak256("THIS IS TEST REASON");
+
+        vm.prank(original);
+        uint256 docIndex = manager.submitDocument(docHash);
+
+        vm.prank(alice);
+        manager.approveDocument(docIndex, 100, reasonHash);
+
+        assertEq(token.balanceOf(original), 100);
+
+        vm.expectEmit(address(manager));
+        emit IStudentManager.StudentRecordUpdated(studentId, original, dummy0);
+
+        vm.prank(alice);
+        manager.updateStudentRecord(studentId, dummy0, false);
+
+        assertEq(manager.students(studentId), dummy0);
+        assertEq(manager.studentByAddr(original), studentId);
+        assertEq(manager.studentByAddr(dummy0), studentId);
+
+        assertEq(token.balanceOf(original), 100);
+        assertEq(token.balanceOf(dummy0), 0);
+
+        // Case 2
+        vm.prank(dummy0);
+        manager.submitDocument(keccak256("DOCUMENT FROM NEW"));
+
+        vm.expectRevert("address validation check failed");
+        vm.prank(original);
+        manager.submitDocument(keccak256("DOCUMENT FROM ORIGINAL"));
+
+        // Case 3
+        assertEq(manager.students(studentId), dummy0);
+        vm.prank(alice);
+        manager.updateStudentRecord(studentId, dummy0, true); // newAccount -> newAccount
+
+        assertEq(manager.students(studentId), dummy0);
+        assertEq(manager.studentByAddr(original), studentId); // not 0
+        assertEq(manager.studentByAddr(dummy0), studentId);
+
+        vm.prank(dummy0);
+        manager.submitDocument(docHash);
+
+        // Case 4
+        address dummy1 = makeAddr("dummy1");
+        address dummy2 = makeAddr("dummy2");
+        bytes32 studentId1 = keccak256(abi.encode("studentId1", "123456789"));
+
+        vm.prank(dummy1);
+        manager.registerStudent(studentId1);
+
+        vm.prank(dummy1);
+        uint256 docIndex4 = manager.submitDocument(docHash);
+
+        vm.prank(alice);
+        manager.approveDocument(docIndex4, 100, reasonHash);
+
+        assertEq(token.balanceOf(dummy1), 100);
+
+        vm.prank(alice);
+        manager.updateStudentRecord(studentId1, dummy2, true);
+
+        // Case 5
+        vm.expectRevert("account doesn't exist");
+        vm.prank(dummy1);
+        manager.submitDocument(docHash);
+
+        vm.expectRevert("account doesn't exist");
+        vm.prank(dummy1);
+        manager.proposeAccountChange(dummy2);
+
+        // Case 6
+        address dummy3 = makeAddr("dummy3");
+        address dummy4 = makeAddr("dummy4");
+        address dummy5 = makeAddr("dummy5");
+        bytes32 studentId3 = keccak256(abi.encode("studentId3", "123456789"));
+
+        vm.prank(dummy3);
+        manager.registerStudent(studentId3);
+
+        vm.prank(dummy3);
+        manager.proposeAccountChange(dummy4);
+
+        vm.prank(alice);
+        manager.updateStudentRecord(studentId3, dummy5, false);
+
+        vm.expectRevert("no pending account change");
+        vm.prank(dummy4);
+        manager.confirmAccountChange(studentId3);
+    }
+
+    function test_transferFromToken() public {
+        // Case 1
+        bytes32 studentId1 = keccak256(abi.encode("studentId1", "123456789"));
+        bytes32 studentId2 = keccak256(abi.encode("studentId2", "987654321"));
+
+        _registerStudent(studentId1, bob);
+        _registerStudent(studentId2, charlie);
+
+        bytes32 docHash = keccak256("THIS IS TEST DOCUMENT");
+        bytes32 reasonHash = keccak256("THIS IS TEST REASON");
+
+        vm.prank(bob);
+        uint256 docIndex = manager.submitDocument(docHash);
+
+        vm.prank(alice);
+        manager.approveDocument(docIndex, 150, reasonHash);
+
+        assertEq(token.balanceOf(bob), 150);
+        assertEq(token.balanceOf(charlie), 0);
+
+        vm.prank(alice);
+        manager.transferFromToken(studentId1, studentId2, 50);
+
+        assertEq(token.balanceOf(bob), 100);
+        assertEq(token.balanceOf(charlie), 50);
+
+        // Case 2
+        address david = makeAddr("david");
+        bytes32 studentId4 = keccak256(abi.encode("studentId4", "123"));
+
+        vm.prank(david);
+        manager.registerStudent(studentId4);
+
+        vm.prank(david);
+        uint256 docIdx = manager.submitDocument(keccak256("PROBLEM_DOC"));
+
+        vm.prank(alice);
+        manager.approveDocument(docIdx, 200, keccak256("PROBLEM_REASON"));
+
+        vm.prank(alice);
+        manager.updateStudentRecord(studentId4, makeAddr("ghost"), false);
+
+        // Case 3
+        address eve = makeAddr("eve");
+        bytes32 studentId5 = keccak256(abi.encode("studentId5", "999"));
+
+        vm.prank(eve);
+        manager.registerStudent(studentId5);
+
+        vm.expectRevert("KIP7: transfer amount exceeds balance");
+        vm.prank(alice);
+        manager.transferFromToken(studentId4, studentId5, 200);
+    }
 }
