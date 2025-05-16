@@ -158,9 +158,9 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
     function proposeAccountChange(
         address targetAccount
     ) external whenNotPaused {
-        require(targetAccount != address(0), "invalid targetAccount");
+        require(targetAccount != address(0) && targetAccount != msg.sender, "invalid targetAccount");
         bytes32 studentId = _validateAccount();
-        require(studentByAddr[targetAccount] == "", "targetAccount already exists");
+        require(studentByAddr[targetAccount] == bytes32(0), "targetAccount already exists");
 
         pendingAccountChanges[studentId] =
             AccountChangeProposal({targetAccount: targetAccount, createdAt: block.timestamp});
