@@ -6,8 +6,9 @@ import {SwMileageTokenImpl} from "./SwMileageToken.impl.sol";
 import {IStudentManager} from "./IStudentManager.sol";
 import {Admin} from "./Admin.sol";
 import {Initializable} from "kaia-contracts/contracts/proxy/utils/Initializable.sol";
+import {Pausable} from "kaia-contracts/contracts/security/Pausable.sol";
 
-contract StudentManagerImpl is IStudentManager, Initializable, Admin {
+contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
     mapping(bytes32 => address) public students;
     mapping(address => bytes32) public studentByAddr;
     mapping(uint256 => DocumentSubmission) public docSubmissions;
@@ -40,6 +41,14 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin {
         _mileageToken = SwMileageTokenImpl(addr);
     }
 
+    function pause() public onlyAdmin {
+        _pause();
+    }
+
+    function unpause() public onlyAdmin {
+        _unpause();
+    }
+
     function getDocSubmission(
         uint256 index
     ) public view returns (DocumentSubmission memory) {
@@ -67,7 +76,7 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin {
     // check account is EOA
     function registerStudent(
         bytes32 studentId
-    ) external {
+    ) external whenNotPaused {
         require(studentId != bytes32("") && students[studentId] == address(0), "studentId already exists");
         require(studentByAddr[msg.sender] == bytes32(""), "account already exists");
         students[studentId] = msg.sender;
@@ -83,7 +92,7 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin {
 
     function submitDocument(
         bytes32 docHash
-    ) external returns (uint256) {
+    ) external whenNotPaused returns (uint256) {
         bytes32 studentId = _validateAccount();
 
         uint256 documentIndex = documentsCount++;
@@ -142,7 +151,7 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin {
 
     function proposeAccountChange(
         address targetAccount
-    ) public {
+    ) external whenNotPaused {
         require(targetAccount != address(0), "invalid targetAccount");
         bytes32 studentId = _validateAccount();
         require(studentByAddr[targetAccount] == "", "targetAccount already exists");
@@ -155,7 +164,7 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin {
 
     function confirmAccountChange(
         bytes32 studentId
-    ) public {
+    ) external whenNotPaused {
         address currentAccount = students[studentId];
         address targetAccount = pendingAccountChanges[studentId].targetAccount;
         uint256 balance = 0;
