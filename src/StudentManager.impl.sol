@@ -26,10 +26,6 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
         _mileageToken = SwMileageTokenImpl(mileageToken_);
     }
 
-    function mileageToken() public view returns (address) {
-        return address(_mileageToken);
-    }
-
     function initialize(address mileageToken_, address admin) external initializer {
         _mileageToken = SwMileageTokenImpl(mileageToken_);
         _addAdmin(admin);
@@ -49,110 +45,20 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
         _unpause();
     }
 
-    function getDocSubmission(
-        uint256 index
-    ) public view returns (DocumentSubmission memory) {
-        return docSubmissions[index];
+    function mileageToken() public view returns (address) {
+        return address(_mileageToken);
     }
 
-    function getDocResult(
-        uint256 index
-    ) public view returns (DocumentResult memory) {
-        return docResults[index];
-    }
-
-    function getPendingAccountChange(
-        bytes32 studentId
-    ) external view returns (AccountChangeProposal memory) {
-        return pendingAccountChanges[studentId];
-    }
-
-    function getPendingAccountChangeTarget(
-        bytes32 studentId
-    ) public view returns (address) {
-        return pendingAccountChanges[studentId].targetAccount;
-    }
-
-    function hasPendingAccountChange(
-        bytes32 studentId
-    ) public view returns (bool) {
-        return pendingAccountChanges[studentId].targetAccount != address(0);
-    }
+    ////////////////////////// account
 
     // check account is EOA
     function registerStudent(
         bytes32 studentId
     ) external whenNotPaused {
-        require(studentId != bytes32("") && students[studentId] == address(0), "studentId already exists");
-        require(studentByAddr[msg.sender] == bytes32(""), "account already exists");
+        require(studentId != bytes32(0) && students[studentId] == address(0), "studentId already exists");
+        require(studentByAddr[msg.sender] == bytes32(0), "account already exists");
         students[studentId] = msg.sender;
         studentByAddr[msg.sender] = studentId;
-    }
-
-    function _validateAccount() internal view returns (bytes32) {
-        bytes32 studentId = studentByAddr[msg.sender];
-        require(studentId != "", "account doesn't exist");
-        require(students[studentId] == msg.sender, "address validation check failed");
-        return studentId;
-    }
-
-    function submitDocument(
-        bytes32 docHash
-    ) external whenNotPaused returns (uint256) {
-        bytes32 studentId = _validateAccount();
-
-        uint256 documentIndex = documentsCount++;
-        docSubmissions[documentIndex] = DocumentSubmission({
-            studentId: studentId,
-            docHash: docHash,
-            createdAt: block.timestamp,
-            status: SubmissionStatus.Pending
-        });
-
-        emit DocSubmitted(documentIndex, studentId, docHash);
-        return documentIndex;
-    }
-
-    function approveDocument(uint256 documentIndex, uint256 amount, bytes32 reasonHash) external onlyAdmin {
-        require(documentIndex < documentsCount, "invalid documentIndex");
-        DocumentSubmission storage document = docSubmissions[documentIndex];
-        require(document.status == SubmissionStatus.Pending, "unavailable document");
-
-        if (amount == 0) {
-            _rejectDocument(documentIndex, reasonHash);
-            return;
-        }
-
-        bytes32 studentId = document.studentId;
-        address student = students[studentId];
-
-        document.status = SubmissionStatus.Approved;
-        _mileageToken.mint(student, amount);
-        docResults[documentIndex] =
-            DocumentResult({reasonHash: reasonHash, amount: amount, processedAt: block.timestamp});
-
-        emit DocApproved(documentIndex, studentId, amount);
-    }
-
-    function _rejectDocument(uint256 documentIndex, bytes32 reasonHash) internal {
-        DocumentSubmission storage document = docSubmissions[documentIndex];
-        document.status = SubmissionStatus.Rejected;
-
-        docResults[documentIndex] = DocumentResult({reasonHash: reasonHash, amount: 0, processedAt: block.timestamp});
-
-        emit DocRejected(documentIndex, document.studentId, reasonHash);
-    }
-
-    function burnFrom(bytes32 studentId, address account, uint256 amount) external onlyAdmin {
-        // is valid account, studentId?
-        if (account == address(0)) {
-            account = students[studentId];
-            _mileageToken.burnFrom(account, amount);
-        } else {
-            studentId = studentByAddr[account];
-            _mileageToken.burnFrom(account, amount);
-        }
-        emit MileageBurned(studentId, account, msg.sender, amount);
     }
 
     function proposeAccountChange(
@@ -196,6 +102,90 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
 
         emit AccountChangeConfirmed(studentId, currentAccount, targetAccount);
         emit AccountChanged(studentId, currentAccount, targetAccount);
+    }
+
+    function getPendingAccountChange(
+        bytes32 studentId
+    ) external view returns (AccountChangeProposal memory) {
+        return pendingAccountChanges[studentId];
+    }
+
+    function getPendingAccountChangeTarget(
+        bytes32 studentId
+    ) public view returns (address) {
+        return pendingAccountChanges[studentId].targetAccount;
+    }
+
+    function hasPendingAccountChange(
+        bytes32 studentId
+    ) public view returns (bool) {
+        return pendingAccountChanges[studentId].targetAccount != address(0);
+    }
+
+    ////////////////////////// document
+
+    function submitDocument(
+        bytes32 docHash
+    ) external whenNotPaused returns (uint256) {
+        bytes32 studentId = _validateAccount();
+
+        uint256 documentIndex = documentsCount++;
+        docSubmissions[documentIndex] = DocumentSubmission({
+            studentId: studentId,
+            docHash: docHash,
+            createdAt: block.timestamp,
+            status: SubmissionStatus.Pending
+        });
+
+        emit DocSubmitted(documentIndex, studentId, docHash);
+        return documentIndex;
+    }
+
+    function approveDocument(uint256 documentIndex, uint256 amount, bytes32 reasonHash) external onlyAdmin {
+        require(documentIndex < documentsCount, "invalid documentIndex");
+        DocumentSubmission storage document = docSubmissions[documentIndex];
+        require(document.status == SubmissionStatus.Pending, "unavailable document");
+
+        if (amount == 0) {
+            _rejectDocument(documentIndex, reasonHash);
+            return;
+        }
+
+        bytes32 studentId = document.studentId;
+        address student = students[studentId];
+
+        document.status = SubmissionStatus.Approved;
+        _mileageToken.mint(student, amount);
+        docResults[documentIndex] =
+            DocumentResult({reasonHash: reasonHash, amount: amount, processedAt: block.timestamp});
+
+        emit DocApproved(documentIndex, studentId, amount);
+    }
+
+    function getDocSubmission(
+        uint256 index
+    ) public view returns (DocumentSubmission memory) {
+        return docSubmissions[index];
+    }
+
+    function getDocResult(
+        uint256 index
+    ) public view returns (DocumentResult memory) {
+        return docResults[index];
+    }
+
+    ////////////////////////// admin utilities
+
+    function burnFrom(bytes32 studentId, address account, uint256 amount) external onlyAdmin {
+        // is valid account, studentId?
+        if (account == address(0)) {
+            account = students[studentId];
+            _mileageToken.burnFrom(account, amount);
+        } else {
+            studentId = studentByAddr[account];
+            _mileageToken.burnFrom(account, amount);
+        }
+        emit MileageBurned(studentId, account, msg.sender, amount);
     }
 
     function changeAccount(bytes32 studentId, address targetAccount) external onlyAdmin {
@@ -246,5 +236,23 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
         require(from != address(0) && to != address(0), "invalid student ID");
         // transfer token directly
         _mileageToken.transferFrom(from, to, amount);
+    }
+
+    ////////////////////////// helpers
+
+    function _validateAccount() internal view returns (bytes32) {
+        bytes32 studentId = studentByAddr[msg.sender];
+        require(studentId != bytes32(0), "account doesn't exist");
+        require(students[studentId] == msg.sender, "address validation check failed");
+        return studentId;
+    }
+
+    function _rejectDocument(uint256 documentIndex, bytes32 reasonHash) internal {
+        DocumentSubmission storage document = docSubmissions[documentIndex];
+        document.status = SubmissionStatus.Rejected;
+
+        docResults[documentIndex] = DocumentResult({reasonHash: reasonHash, amount: 0, processedAt: block.timestamp});
+
+        emit DocRejected(documentIndex, document.studentId, reasonHash);
     }
 }
