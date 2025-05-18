@@ -59,10 +59,10 @@ RPC_URL=http://127.0.0.1:8545
 ls artifacts/ | grep "deploy.json"
 ```
 
--   Also, you can deploy with `forge script`, but it doesn't generate `artifacts/deploy.json`.
+Also, you can deploy with `forge script`, but it doesn't generate `artifacts/deploy.json`.
 
 ```shell
 forge script script/SwMileageDeploy.s.sol --broadcast --skip-simulation --gas-estimate-multiplier 500
 ```
 
--   In our case, forge underestimates gas used of `deploy(...)` function in certain chain. Therefore, use temporarily `--gas-estimate-multiplier 500` to overestimate gas used.
+In our case, forge underestimates gas used of `deploy(...)` function in certain chain. Therefore, use temporarily `--gas-estimate-multiplier 500` to overestimate gas used.
