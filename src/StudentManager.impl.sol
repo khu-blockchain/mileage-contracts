@@ -62,6 +62,7 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
         require(studentByAddr[msg.sender] == bytes32(0), "StudentManager: address already registered");
         students[studentId] = msg.sender;
         studentByAddr[msg.sender] = studentId;
+        emit StudentRegistered(studentId, msg.sender);
     }
 
     function proposeAccountChange(
@@ -162,7 +163,7 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
         docResults[documentIndex] =
             DocumentResult({reasonHash: reasonHash, amount: amount, processedAt: block.timestamp});
 
-        emit DocApproved(documentIndex, studentId, amount);
+        emit DocApproved(documentIndex, studentId, amount, reasonHash);
     }
 
     function getDocSubmission(

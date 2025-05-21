@@ -50,11 +50,38 @@ contract StudentManagerTest is Test {
     function test_registerStudent() public {
         // Case 1
         bytes32 studentId = keccak256(abi.encode("studentId", "123456789"));
+
+        vm.expectEmit(address(manager));
+        emit IStudentManager.StudentRegistered(studentId, alice);
+        vm.prank(alice);
+        manager.registerStudent(studentId);
+
+        console.logBytes32(studentId);
+        assertEq(manager.students(studentId), alice);
+        assertEq(manager.studentByAddr(alice), studentId);
+    }
+
+    function test_registerStudent_fail() public {
+        bytes32 studentId = keccak256(abi.encode("studentId", "123456789"));
+        bytes32 studentId2 = keccak256(abi.encode("studentId2", "123456789"));
+
         vm.prank(alice);
         manager.registerStudent(studentId);
         console.logBytes32(studentId);
         assertEq(manager.students(studentId), alice);
         assertEq(manager.studentByAddr(alice), studentId);
+
+        vm.expectRevert("StudentManager: address already registered");
+        vm.prank(alice);
+        manager.registerStudent(studentId2);
+
+        vm.expectRevert("StudentManager: student ID already registered");
+        vm.prank(alice);
+        manager.registerStudent(studentId);
+
+        vm.expectRevert("StudentManager: student ID already registered");
+        vm.prank(bob);
+        manager.registerStudent(studentId);
     }
 
     function test_registerStudent_existsAccount() public {
