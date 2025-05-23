@@ -775,6 +775,26 @@ contract StudentManagerTest is Test {
         manager.transferFromToken(studentId4, studentId5, 200);
     }
 
+    function test_transferFromToken_notRegistered() public {
+        bytes32 studentId1 = keccak256(abi.encode("studentId1", "123456789"));
+        bytes32 studentId2 = keccak256(abi.encode("studentId2", "987654321"));
+
+        _registerStudent(studentId1, bob);
+        _registerStudent(studentId2, charlie);
+
+        vm.expectRevert("students not registered");
+        vm.prank(alice);
+        manager.transferFromToken(studentId1, bytes32(0), 50);
+
+        vm.expectRevert("students not registered");
+        vm.prank(alice);
+        manager.transferFromToken(bytes32(0), studentId2, 50);
+
+        vm.expectRevert("students not registered");
+        vm.prank(alice);
+        manager.transferFromToken(bytes32(0), bytes32(0), 50);
+    }
+
     function test_targetAccountAlreadyExists1() public {
         bytes32 studentId1 = keccak256(abi.encode("studentId1", "123456789"));
         bytes32 studentId2 = keccak256(abi.encode("studentId2", "123456789"));
