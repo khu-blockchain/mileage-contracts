@@ -709,6 +709,18 @@ contract StudentManagerTest is Test {
         manager.confirmAccountChange(studentId3);
     }
 
+    function test_updateStudentRecord_emptyId() public {
+        bytes32 studentId = bytes32(0);
+
+        vm.expectRevert("empty student ID");
+        vm.prank(alice);
+        manager.updateStudentRecord(studentId, bob, false);
+
+        vm.expectRevert("empty student ID");
+        vm.prank(alice);
+        manager.updateStudentRecord(studentId, bob, true);
+    }
+
     function test_transferFromToken() public {
         // Case 1
         bytes32 studentId1 = keccak256(abi.encode("studentId1", "123456789"));
