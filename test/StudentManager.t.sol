@@ -507,6 +507,39 @@ contract StudentManagerTest is Test {
         manager.proposeAccountChange(anotherAccount);
     }
 
+    function test_burnFrom() public {
+        bytes32 studentId = keccak256(abi.encode("studentId", "123456789"));
+
+        _registerStudent(studentId, bob);
+
+        bytes32 docHash = keccak256("THIS IS TEST DOCUMENT");
+        bytes32 reasonHash = keccak256("THIS IS TEST REASON");
+
+        vm.prank(bob);
+        uint256 docIndex = manager.submitDocument(docHash);
+
+        vm.prank(alice);
+        manager.approveDocument(docIndex, 100, reasonHash);
+
+        assertEq(token.balanceOf(bob), 100);
+
+        vm.expectEmit(address(manager));
+        emit IStudentManager.MileageBurned(studentId, bob, alice, 50);
+
+        vm.prank(alice);
+        manager.burnFrom(studentId, address(0), 50);
+
+        assertEq(token.balanceOf(bob), 50);
+
+        vm.expectEmit(address(manager));
+        emit IStudentManager.MileageBurned(studentId, bob, alice, 50);
+
+        vm.prank(alice);
+        manager.burnFrom(bytes32(0), bob, 50);
+
+        assertEq(token.balanceOf(bob), 0);
+    }
+
     function test_accountChange_zeroBalance() public {
         // Case 1
         bytes32 studentId = keccak256(abi.encode("studentId", "123456789"));
