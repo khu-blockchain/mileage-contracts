@@ -84,6 +84,29 @@ contract StudentManagerTest is Test {
         manager.registerStudent(studentId);
     }
 
+    function test_registerStudent_emptyId() public {
+        bytes32 studentId = bytes32(0);
+        vm.expectRevert("empty student ID");
+        vm.prank(alice);
+        manager.registerStudent(studentId);
+    }
+
+    function test_registerStudent_alreadyAddrReigstered() public {
+        bytes32 studentId1 = keccak256(abi.encode("studentId1", "123456789"));
+        vm.prank(bob);
+        manager.registerStudent(studentId1);
+
+        assertEq(manager.students(studentId1), bob);
+        assertEq(manager.studentByAddr(bob), studentId1);
+
+        vm.prank(bob);
+        bytes32 studentId2 = keccak256(abi.encode("studentId2", "123456789"));
+
+        vm.expectRevert("address already registered");
+        manager.registerStudent(studentId2);
+        vm.stopPrank();
+    }
+
     function test_registerStudent_existsAccount() public {
         // Case 1
         bytes32 studentId = keccak256(abi.encode("studentId", "123456789"));
