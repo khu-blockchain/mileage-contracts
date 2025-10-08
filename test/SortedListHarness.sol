@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import {SortedList} from "../src/SortedList.sol";
 import {ISortedList} from "../src/ISortedList.sol";
 
-contract MockSortedList is SortedList {
+contract SortedListHarness is SortedList {
     function update(address addr, uint256 value) public {
         _updateElement(addr, value);
     }
@@ -13,19 +13,18 @@ contract MockSortedList is SortedList {
         return abi.decode(_getAllElement(), (ISortedList.DataPair[]));
     }
 
-    function getRange(uint256 from, uint256 to) public view returns (ISortedList.DataPair[] memory) {
+    function getRange(
+        uint256 from,
+        uint256 to
+    ) public view returns (ISortedList.DataPair[] memory) {
         return abi.decode(_getElementRange(from, to), (ISortedList.DataPair[]));
     }
 
-    function indexOf(
-        address account
-    ) public view returns (int256) {
+    function indexOf(address account) public view returns (int256) {
         return _getElementIndex(account);
     }
 
-    function remove(
-        address target
-    ) public {
+    function remove(address target) public {
         _removeElement(target, true);
     }
 
@@ -37,15 +36,11 @@ contract MockSortedList is SortedList {
         _pop();
     }
 
-    function contains(
-        address addr
-    ) public view returns (bool) {
+    function contains(address addr) public view returns (bool) {
         return _getElementIndex(addr) >= 0;
     }
 
-    function valueOf(
-        address addr
-    ) public view returns (uint256) {
+    function valueOf(address addr) public view returns (uint256) {
         ISortedList.DataPair[] memory elements = getAll();
         for (uint256 i = 0; i < elements.length; i++) {
             if (elements[i].addr == addr) {

@@ -12,7 +12,7 @@ interface IStudentManagerFactory {
     event MileageTokenCreated(address indexed tokenAddress);
 }
 
-contract MockStudentManager is StudentManagerImpl {
+contract StudentManagerHarness is StudentManagerImpl {
     constructor(address token, address tokenImpl) StudentManagerImpl(token, tokenImpl) {}
 
     function changeDocStatus(uint256 index, IStudentManager.SubmissionStatus status) external {
@@ -22,7 +22,7 @@ contract MockStudentManager is StudentManagerImpl {
 
 contract StudentManagerTest is Test {
     SwMileageTokenImpl public token;
-    MockStudentManager public manager;
+    StudentManagerHarness public manager;
     SwMileageTokenImpl public tokenImpl;
     address alice = makeAddr("alice");
     address bob = makeAddr("bob");
@@ -32,7 +32,7 @@ contract StudentManagerTest is Test {
         vm.startPrank(alice);
         token = new SwMileageTokenImpl("", "");
         tokenImpl = new SwMileageTokenImpl("", "");
-        manager = new MockStudentManager(address(token), address(tokenImpl));
+        manager = new StudentManagerHarness(address(token), address(tokenImpl));
 
         token.addAdmin(address(manager));
 
