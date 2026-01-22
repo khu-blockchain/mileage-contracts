@@ -8,11 +8,18 @@ interface ISwMileageToken is IKIP7, IKIP7Burnable {
     error BurnNotAllowed();
     error ApprovalNotAllowed();
     error AdminOnlyOperation();
+
     struct Student {
         address account;
         uint256 balance;
     }
 
-    function mint(address account, uint256 amount) external;
-    function getRankingRange(uint256 from, uint256 to) external view returns (Student[] memory);
+    function mint(
+        address account,
+        uint256 amount
+    ) external;
+    function getRankingRange(
+        uint256 from,
+        uint256 to
+    ) external view returns (Student[] memory);
 }
